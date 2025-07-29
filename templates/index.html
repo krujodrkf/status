@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Servicios</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Monitor de Servicios</h1>
+        
+        <div class="services-container">
+            {% for service in services %}
+            <div class="service-panel" data-service="{{ service }}">
+                <div class="service-header">
+                    <h2 class="service-name">{{ service.title() }}</h2>
+                    <div class="service-status">
+                        <span class="status-indicator" id="status-{{ service }}">●</span>
+                        <span class="last-update" id="lastupdate-{{ service }}">Cargando...</span>
+                    </div>
+                </div>
+                
+                <div class="time-bar-container">
+                    <div class="time-labels">
+                        <span>00:00</span>
+                        <span>06:00</span>
+                        <span>12:00</span>
+                        <span>18:00</span>
+                        <span>24:00</span>
+                    </div>
+                    <div class="time-bar" id="timebar-{{ service }}">
+                        <!-- Los segmentos se generarán con JavaScript -->
+                    </div>
+                    <div class="time-bar-help">
+                        💡 Haz click en los segmentos verdes/rojos para ver detalles completos
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Modal para mostrar detalles -->
+    <div id="modal-overlay" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3 id="modal-service-name">Bolivariano</h3>
+                    <div class="modal-info">
+                        <span id="modal-time"></span>
+                        <span id="modal-status" class="status-badge"></span>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button id="copy-all-button" class="copy-all-button" onclick="copyAllData()">📋 Copiar Todo</button>
+                    <button class="close-button" onclick="closeModal()">✕</button>
+                </div>
+            </div>
+            
+            <div class="modal-body">
+                <div class="data-section">
+                    <h4>Request:</h4>
+                    <pre id="modal-request" class="data-content"></pre>
+                </div>
+                
+                <div class="data-section">
+                    <h4>Response:</h4>
+                    <pre id="modal-response" class="data-content"></pre>
+                </div>
+                
+                <div id="modal-error" class="error-section" style="display: none;">
+                    <h4>Error:</h4>
+                    <div class="error-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html> 
