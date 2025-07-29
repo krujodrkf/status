@@ -18,12 +18,29 @@ Sistema de monitoreo simple para verificar el estado de servicios web. Muestra e
 pip install -r requirements.txt
 ```
 
-2. Ejecutar la aplicación:
+2. **CONFIGURACIÓN SEGURA (RECOMENDADO):**
+   
+   Crea un archivo `.env` en la raíz del proyecto con tus credenciales:
+   ```
+   # Configuración del servicio Bolivariano
+   BOLIVARIANO_USERNAME=tu_usuario_aqui
+   BOLIVARIANO_PASSWORD=tu_password_aqui
+   
+   # Configuración de la aplicación
+   FLASK_ENV=development
+   SECRET_KEY=cambia_esta_clave_secreta
+   ```
+   
+   **⚠️ IMPORTANTE:** Nunca subas el archivo `.env` a control de versiones.
+
+3. Ejecutar la aplicación:
 ```bash
 python app.py
 ```
 
-3. Abrir navegador en `http://localhost:5000`
+4. Acceder a la aplicación:
+   - **Local:** `http://localhost:5000`
+   - **Desde LAN:** `http://[IP_DE_TU_MAQUINA]:5000`
 
 ## Configuración de Servicios
 
@@ -73,4 +90,27 @@ status/
 
 - `GET /` - Página principal
 - `GET /api/data` - Datos de todos los servicios
-- `GET /api/data/<servicio>` - Datos de un servicio específico 
+- `GET /api/data/<servicio>` - Datos de un servicio específico
+
+## 🔒 Seguridad
+
+### Medidas Implementadas:
+
+✅ **Credenciales Protegidas**
+- Las credenciales se almacenan en variables de entorno (.env)
+- Nunca se exponen en el código fuente
+
+✅ **Sanitización de Datos**
+- Los tokens y credenciales se ocultan antes de enviar al frontend
+- Usuario/password aparecen como `[USUARIO_OCULTO]` y `[PASSWORD_OCULTO]`
+- Tokens aparecen como `Bearer [TOKEN_OCULTO]`
+
+✅ **Frontend Seguro**
+- No se pueden ver credenciales reales en herramientas de desarrollador
+- Los datos sensibles están protegidos en el servidor
+
+### Acceso desde LAN:
+
+- ✅ **Ya configurado:** La aplicación acepta conexiones desde cualquier IP de la red local
+- 🌐 **Acceso:** Usa `http://[IP_DE_TU_MAQUINA]:5000` desde otros dispositivos
+- 📱 **Móviles/Tablets:** Funciona perfectamente desde dispositivos móviles en la misma red 

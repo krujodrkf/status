@@ -2,13 +2,22 @@ import requests
 import json
 from datetime import datetime
 from typing import Dict, Any
+import sys
+import os
+
+# Agregar el directorio padre al path para importar config
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config import Config
 
 class BolivarianoService:
     def __init__(self):
         self.name = "Bolivariano"
         self.base_url = "https://apis.bolivariano.com.co"
-        self.username = "PBUS@43607"
-        self.password = "dpUhwsa#k@"
+        
+        # Obtener credenciales de forma segura
+        service_config = Config.get_service_config('bolivariano')
+        self.username = service_config.get('username')
+        self.password = service_config.get('password')
         self.token = None
         
     def get_token(self) -> Dict[str, Any]:
@@ -167,20 +176,48 @@ class BolivarianoService:
                 'response': ''
             }
     
+    def sanitize_request_data(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Elimina datos sensibles del request antes de enviarlo al frontend"""
+        sanitized = request_data.copy()
+        
+        # Eliminar credenciales de headers
+        if 'headers' in sanitized:
+            headers = sanitized['headers'].copy()
+            if 'Authorization' in headers:
+                headers['Authorization'] = 'Bearer [TOKEN_OCULTO]'
+            sanitized['headers'] = headers
+        
+        # Eliminar credenciales del body si existen
+        if 'body' in sanitized and isinstance(sanitized['body'], dict):
+            body = sanitized['body'].copy()
+            if 'userName' in body:
+                body['userName'] = '[USUARIO_OCULTO]'
+            if 'password' in body:
+                body['password'] = '[PASSWORD_OCULTO]'
+            sanitized['body'] = body
+        
+        return sanitized
+    
     def check_service(self) -> Dict[str, Any]:
         """Verificación principal del servicio"""
         result = self.check_trips_api()
         
         if result['success']:
+            # Sanitizar datos antes de enviar al frontend
+            sanitized_request = self.sanitize_request_data(result['request'])
+            
             return {
                 'status': 'success',
-                'request': json.dumps(result['request'], indent=2),
+                'request': json.dumps(sanitized_request, indent=2),
                 'response': json.dumps(result['response'], indent=2)
             }
         else:
+            # Sanitizar datos antes de enviar al frontend
+            sanitized_request = self.sanitize_request_data(result['request']) if 'request' in result else {}
+            
             return {
                 'status': 'error',
-                'request': json.dumps(result['request'], indent=2) if 'request' in result else '',
+                'request': json.dumps(sanitized_request, indent=2) if sanitized_request else '',
                 'response': json.dumps(result['response'], indent=2) if 'response' in result else '',
                 'error': result['error']
             } 

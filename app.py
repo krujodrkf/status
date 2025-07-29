@@ -6,8 +6,10 @@ import time
 from datetime import datetime, timedelta
 import schedule
 from services.bolivariano import BolivarianoService
+from config import Config
 
 app = Flask(__name__)
+app.config.from_object(Config)
 
 # Almacenamiento en memoria para los resultados del monitoreo
 monitoring_data = {}
