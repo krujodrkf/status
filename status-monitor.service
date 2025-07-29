@@ -1,0 +1,23 @@
+[Unit]
+Description=Status Monitor - Servicio de monitoreo de APIs
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/ruta/completa/al/proyecto/status
+Environment=PATH=/ruta/completa/al/proyecto/status/venv/bin
+ExecStart=/ruta/completa/al/proyecto/status/venv/bin/python app.py
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=status-monitor
+
+# Variables de entorno (opcional, mejor usar .env)
+# Environment=FLASK_ENV=production
+
+[Install]
+WantedBy=multi-user.target 

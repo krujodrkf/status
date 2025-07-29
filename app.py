@@ -7,12 +7,13 @@ from datetime import datetime, timedelta
 import schedule
 from services.bolivariano import BolivarianoService
 from config import Config
+from database import MonitoringDatabase
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Almacenamiento en memoria para los resultados del monitoreo
-monitoring_data = {}
+# Base de datos para almacenamiento persistente
+db = MonitoringDatabase()
 
 # Servicios disponibles
 services = {
@@ -24,21 +25,21 @@ def run_service_check(service_name, service):
     now = datetime.now()
     result = service.check_service()
     
-    if service_name not in monitoring_data:
-        monitoring_data[service_name] = {}
-    
     # Crear clave para el tiempo (redondeado a 5 minutos)
     time_key = now.replace(second=0, microsecond=0)
     time_key = time_key.replace(minute=(time_key.minute // 5) * 5)
     time_str = time_key.strftime('%H:%M')
     
-    monitoring_data[service_name][time_str] = {
-        'timestamp': now.isoformat(),
-        'status': result['status'],
-        'request': result.get('request', ''),
-        'response': result.get('response', ''),
-        'error': result.get('error', '')
-    }
+    # Guardar en base de datos
+    db.insert_monitoring_data(
+        service_name=service_name,
+        timestamp=now,
+        time_slot=time_str,
+        status=result['status'],
+        request_data=result.get('request', ''),
+        response_data=result.get('response', ''),
+        error_message=result.get('error', '')
+    )
     
     print(f"[{now.strftime('%Y-%m-%d %H:%M:%S')}] {service_name}: {result['status']}")
 
@@ -50,12 +51,23 @@ def run_all_checks():
         except Exception as e:
             print(f"Error checking {service_name}: {str(e)}")
 
+def cleanup_old_data():
+    """Limpia datos antiguos de la base de datos"""
+    try:
+        deleted_count = db.cleanup_old_data(hours_to_keep=48)
+        if deleted_count > 0:
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Limpieza: eliminados {deleted_count} registros antiguos")
+    except Exception as e:
+        print(f"Error en limpieza de datos: {str(e)}")
+
 def start_scheduler():
     """Inicia el scheduler en un hilo separado"""
     schedule.every(5).minutes.do(run_all_checks)
+    schedule.every(6).hours.do(cleanup_old_data)
     
-    # Ejecutar una verificación inicial
+    # Ejecutar verificaciones y limpieza inicial
     run_all_checks()
+    cleanup_old_data()
     
     while True:
         schedule.run_pending()
@@ -72,13 +84,18 @@ def get_service_data(service_name):
     if service_name not in services:
         return jsonify({'error': 'Service not found'}), 404
     
-    data = monitoring_data.get(service_name, {})
+    data = db.get_service_data_last_24h(service_name)
     return jsonify(data)
 
 @app.route('/api/data')
 def get_all_data():
     """API endpoint para obtener datos de todos los servicios"""
-    return jsonify(monitoring_data)
+    return jsonify(db.get_all_services_data_last_24h())
+
+@app.route('/api/stats')
+def get_database_stats():
+    """API endpoint para obtener estadísticas de la base de datos"""
+    return jsonify(db.get_database_stats())
 
 if __name__ == '__main__':
     # Iniciar el scheduler en un hilo separado

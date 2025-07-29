@@ -42,6 +42,40 @@ python app.py
    - **Local:** `http://localhost:5000`
    - **Desde LAN:** `http://[IP_DE_TU_MAQUINA]:5000`
 
+## 🚀 Instalación como Servicio del Sistema (Ubuntu)
+
+Para que la aplicación se ejecute automáticamente al iniciar el sistema:
+
+```bash
+# Hacer ejecutable el script de instalación
+chmod +x instalar_servicio.sh
+
+# Ejecutar instalación
+./instalar_servicio.sh
+```
+
+### Comandos del Servicio:
+
+```bash
+# Ver estado del servicio
+sudo systemctl status status-monitor
+
+# Detener servicio
+sudo systemctl stop status-monitor
+
+# Iniciar servicio
+sudo systemctl start status-monitor
+
+# Reiniciar servicio
+sudo systemctl restart status-monitor
+
+# Ver logs en tiempo real
+sudo journalctl -u status-monitor -f
+
+# Desinstalar servicio
+./desinstalar_servicio.sh
+```
+
 ## Configuración de Servicios
 
 Los servicios se configuran en el directorio `services/`. Cada servicio debe:
