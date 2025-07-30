@@ -96,10 +96,10 @@ class BolivarianoService:
     
     def check_trips_api(self) -> Dict[str, Any]:
         """Verifica la API de viajes disponibles"""
-        if not self.token:
-            token_result = self.get_token()
-            if not token_result['success']:
-                return token_result
+        # Siempre obtener un token nuevo para evitar problemas de vencimiento
+        token_result = self.get_token()
+        if not token_result['success']:
+            return token_result
         
         url = f"{self.base_url}/weballiates/V1/Sales/GetAvailableTripsRoundTrip"
         

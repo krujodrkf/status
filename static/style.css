@@ -129,13 +129,7 @@ h1 {
     transform: scaleY(1.1);
 }
 
-.time-bar-help {
-    font-size: 0.8em;
-    color: #7f8c8d;
-    text-align: center;
-    margin-top: 8px;
-    font-style: italic;
-}
+
 
 /* Modal */
 .modal-overlay {

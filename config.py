@@ -15,6 +15,10 @@ class Config:
     BOLIVARIANO_USERNAME = os.environ.get('BOLIVARIANO_USERNAME') or 'PBUS@43607'
     BOLIVARIANO_PASSWORD = os.environ.get('BOLIVARIANO_PASSWORD') or 'dpUhwsa#k@'
     
+    # Configuración Brasilia
+    BRASILIA_USERNAME = os.environ.get('BRASILIA_USERNAME') or 'VI_WEB12'
+    BRASILIA_PASSWORD = os.environ.get('BRASILIA_PASSWORD') or 'P1NBU52020'
+    
     # Configuración de monitoreo
     CHECK_INTERVAL_MINUTES = 5
     UPDATE_INTERVAL_SECONDS = 30
@@ -26,5 +30,10 @@ class Config:
             return {
                 'username': Config.BOLIVARIANO_USERNAME,
                 'password': Config.BOLIVARIANO_PASSWORD
+            }
+        elif service_name.lower() == 'brasilia':
+            return {
+                'username': Config.BRASILIA_USERNAME,
+                'password': Config.BRASILIA_PASSWORD
             }
         return {} 

@@ -6,6 +6,7 @@ import time
 from datetime import datetime, timedelta
 import schedule
 from services.bolivariano import BolivarianoService
+from services.brasilia import BrasiliaService
 from config import Config
 from database import MonitoringDatabase
 
@@ -17,7 +18,8 @@ db = MonitoringDatabase()
 
 # Servicios disponibles
 services = {
-    'bolivariano': BolivarianoService()
+    'bolivariano': BolivarianoService(),
+    'brasilia': BrasiliaService()
 }
 
 def run_service_check(service_name, service):
@@ -76,7 +78,7 @@ def start_scheduler():
 @app.route('/')
 def index():
     """Página principal"""
-    return render_template('index.html', services=list(services.keys()))
+    return render_template('index.html', services=sorted(services.keys()))
 
 @app.route('/api/data/<service_name>')
 def get_service_data(service_name):
