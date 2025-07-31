@@ -7,11 +7,15 @@ from datetime import datetime, timedelta
 import schedule
 from services.bolivariano import BolivarianoService
 from services.brasilia import BrasiliaService
+from services.arauca_brasilia import AraucaBrasiliaService
 from config import Config
 from database import MonitoringDatabase
 
 app = Flask(__name__)
 app.config.from_object(Config)
+
+# Registrar filtro personalizado para formatear nombres de servicios
+app.jinja_env.filters['format_service_name'] = lambda service_name: service_name.replace('_', ' ').title()
 
 # Base de datos para almacenamiento persistente
 db = MonitoringDatabase()
@@ -19,7 +23,8 @@ db = MonitoringDatabase()
 # Servicios disponibles
 services = {
     'bolivariano': BolivarianoService(),
-    'brasilia': BrasiliaService()
+    'brasilia': BrasiliaService(),
+    'arauca_brasilia': AraucaBrasiliaService()
 }
 
 def run_service_check(service_name, service):
@@ -65,7 +70,7 @@ def cleanup_old_data():
 def start_scheduler():
     """Inicia el scheduler en un hilo separado"""
     schedule.every(5).minutes.do(run_all_checks)
-    schedule.every(6).hours.do(cleanup_old_data)
+    schedule.every(1).hours.do(cleanup_old_data)
     
     # Ejecutar verificaciones y limpieza inicial
     run_all_checks()

@@ -69,23 +69,55 @@ class ServiceMonitor {
         const lastUpdateElement = document.getElementById(`lastupdate-${service}`);
         const timeBar = document.getElementById(`timebar-${service}`);
 
-        // Obtener último estado
-        const times = Object.keys(serviceData).sort();
-        const lastTime = times[times.length - 1];
-        const lastStatus = lastTime ? serviceData[lastTime].status : 'no-data';
+        // Obtener último estado basado en timestamp real
+        const times = Object.keys(serviceData);
+        let lastTime = null;
+        let lastStatus = 'no-data';
+        
+        if (times.length > 0) {
+            // Ordenar por timestamp real (más reciente primero)
+            lastTime = times.reduce((latest, current) => {
+                if (!latest) return current;
+                const latestTimestamp = new Date(serviceData[latest].timestamp);
+                const currentTimestamp = new Date(serviceData[current].timestamp);
+                return currentTimestamp > latestTimestamp ? current : latest;
+            });
+            lastStatus = serviceData[lastTime].status;
+        }
 
         // Actualizar indicador principal
-        statusIndicator.className = `status-indicator ${lastStatus}`;
-        lastUpdateElement.textContent = lastTime ? 
-            `Última actualización: ${this.formatTimestamp(serviceData[lastTime].timestamp)}` : 
-            'Sin datos';
+        if (lastTime) {
+            const lastTimestamp = new Date(serviceData[lastTime].timestamp);
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const lastDate = new Date(lastTimestamp.getFullYear(), lastTimestamp.getMonth(), lastTimestamp.getDate());
+            
+            const isToday = lastDate.getTime() === today.getTime();
+            const dateClass = isToday ? 'today' : 'yesterday';
+            
+            statusIndicator.className = `status-indicator ${lastStatus} ${dateClass}`;
+            lastUpdateElement.textContent = `Última actualización: ${this.formatTimestamp(serviceData[lastTime].timestamp)}`;
+        } else {
+            statusIndicator.className = `status-indicator no-data`;
+            lastUpdateElement.textContent = 'Sin datos';
+        }
 
         // Actualizar segmentos de tiempo
         const segments = timeBar.querySelectorAll('.time-segment');
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
         segments.forEach(segment => {
             const time = segment.dataset.time;
             if (serviceData[time]) {
-                segment.className = `time-segment ${serviceData[time].status}`;
+                const timestamp = new Date(serviceData[time].timestamp);
+                const segmentDate = new Date(timestamp.getFullYear(), timestamp.getMonth(), timestamp.getDate());
+                
+                // Determinar si es de hoy o de ayer
+                const isToday = segmentDate.getTime() === today.getTime();
+                const dateClass = isToday ? 'today' : 'yesterday';
+                
+                segment.className = `time-segment ${serviceData[time].status} ${dateClass}`;
                 segment.dataset.hasData = 'true';
                 
                 // Guardar datos para el tooltip
@@ -137,8 +169,9 @@ class ServiceMonitor {
             timestamp
         };
 
-        // Actualizar contenido del modal
-        document.getElementById('modal-service-name').textContent = service.charAt(0).toUpperCase() + service.slice(1);
+        // Actualizar contenido del modal - formatear nombre del servicio
+        const formattedServiceName = service.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        document.getElementById('modal-service-name').textContent = formattedServiceName;
         document.getElementById('modal-time').textContent = `${time}`;
         
         const statusBadge = document.getElementById('modal-status');
@@ -180,11 +213,35 @@ class ServiceMonitor {
     formatTimestamp(timestamp) {
         try {
             const date = new Date(timestamp);
-            return date.toLocaleTimeString('es-ES', {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const timestampDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            
+            const timeString = date.toLocaleTimeString('es-ES', {
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit'
             });
+            
+            // Si es de hoy, solo mostrar la hora
+            if (timestampDate.getTime() === today.getTime()) {
+                return timeString;
+            }
+            
+            // Si es de ayer, mostrar "Ayer HH:MM:SS"
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (timestampDate.getTime() === yesterday.getTime()) {
+                return `Ayer ${timeString}`;
+            }
+            
+            // Si es de otro día, mostrar la fecha completa
+            const dateString = date.toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: '2-digit'
+            });
+            return `${dateString} ${timeString}`;
+            
         } catch (e) {
             return timestamp;
         }

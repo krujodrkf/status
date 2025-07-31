@@ -19,6 +19,10 @@ class Config:
     BRASILIA_USERNAME = os.environ.get('BRASILIA_USERNAME') or 'VI_WEB12'
     BRASILIA_PASSWORD = os.environ.get('BRASILIA_PASSWORD') or 'P1NBU52020'
     
+    # Configuración Arauca Brasilia (mismo usuario que Brasilia)
+    ARAUCA_BRASILIA_USERNAME = os.environ.get('ARAUCA_BRASILIA_USERNAME') or 'VI_WEB12'
+    ARAUCA_BRASILIA_PASSWORD = os.environ.get('ARAUCA_BRASILIA_PASSWORD') or 'P1NBU52020'
+    
     # Configuración de monitoreo
     CHECK_INTERVAL_MINUTES = 5
     UPDATE_INTERVAL_SECONDS = 30
@@ -35,5 +39,10 @@ class Config:
             return {
                 'username': Config.BRASILIA_USERNAME,
                 'password': Config.BRASILIA_PASSWORD
+            }
+        elif service_name.lower() == 'arauca_brasilia':
+            return {
+                'username': Config.ARAUCA_BRASILIA_USERNAME,
+                'password': Config.ARAUCA_BRASILIA_PASSWORD
             }
         return {} 

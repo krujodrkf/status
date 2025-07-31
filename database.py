@@ -111,7 +111,7 @@ class MonitoringDatabase:
             
             return result
     
-    def cleanup_old_data(self, hours_to_keep: int = 48):
+    def cleanup_old_data(self, hours_to_keep: int = 24):
         """Elimina datos más antiguos del tiempo especificado"""
         cutoff_time = datetime.now() - timedelta(hours=hours_to_keep)
         
