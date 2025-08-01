@@ -23,6 +23,10 @@ class Config:
     ARAUCA_BRASILIA_USERNAME = os.environ.get('ARAUCA_BRASILIA_USERNAME') or 'VI_WEB12'
     ARAUCA_BRASILIA_PASSWORD = os.environ.get('ARAUCA_BRASILIA_PASSWORD') or 'P1NBU52020'
     
+    # Configuración Transpurificación (SOAP)
+    TRANSPURIFICACION_KEY = os.environ.get('TRANSPURIFICACION_KEY') or 'AABRCYAAADAABXCMF'
+    TRANSPURIFICACION_CONSUMER_ID = os.environ.get('TRANSPURIFICACION_CONSUMER_ID') or 'PINB'
+    
     # Configuración de monitoreo
     CHECK_INTERVAL_MINUTES = 5
     UPDATE_INTERVAL_SECONDS = 30
@@ -44,5 +48,10 @@ class Config:
             return {
                 'username': Config.ARAUCA_BRASILIA_USERNAME,
                 'password': Config.ARAUCA_BRASILIA_PASSWORD
+            }
+        elif service_name.lower() == 'transpurificacion':
+            return {
+                'key': Config.TRANSPURIFICACION_KEY,
+                'consumer_id': Config.TRANSPURIFICACION_CONSUMER_ID
             }
         return {} 

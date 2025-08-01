@@ -52,6 +52,13 @@ h1 {
     color: #2c3e50;
 }
 
+.service-interval {
+    font-size: 0.6em;
+    color: #7f8c8d;
+    font-weight: normal;
+    margin-left: 8px;
+}
+
 .service-status {
     display: flex;
     align-items: center;

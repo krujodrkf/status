@@ -8,6 +8,7 @@ import schedule
 from services.bolivariano import BolivarianoService
 from services.brasilia import BrasiliaService
 from services.arauca_brasilia import AraucaBrasiliaService
+from services.transpurificacion import TranspurificacionService
 from config import Config
 from database import MonitoringDatabase
 
@@ -20,16 +21,39 @@ app.jinja_env.filters['format_service_name'] = lambda service_name: service_name
 # Base de datos para almacenamiento persistente
 db = MonitoringDatabase()
 
-# Servicios disponibles
+# Servicios disponibles con sus intervalos de consulta (en minutos)
 services = {
     'bolivariano': BolivarianoService(),
     'brasilia': BrasiliaService(),
-    'arauca_brasilia': AraucaBrasiliaService()
+    'arauca_brasilia': AraucaBrasiliaService(),
+    'transpurificacion': TranspurificacionService()
 }
+
+# Intervalos de consulta por servicio (en minutos)
+service_intervals = {
+    'bolivariano': 5,
+    'brasilia': 10,
+    'arauca_brasilia': 5,
+    'transpurificacion': 5
+}
+
+# Control de ejecuciones para evitar duplicados
+last_execution = {}
 
 def run_service_check(service_name, service):
     """Ejecuta la verificación de un servicio y almacena el resultado"""
     now = datetime.now()
+    
+    # Control anti-duplicados: evitar múltiples ejecuciones en el mismo minuto
+    current_minute = now.replace(second=0, microsecond=0)
+    last_exec = last_execution.get(service_name)
+    
+    if last_exec and (current_minute - last_exec).total_seconds() < 60:
+        print(f"[DEBUG] SALTANDO {service_name} - ya ejecutado en este minuto")
+        return
+    
+    last_execution[service_name] = current_minute
+    print(f"[DEBUG] EJECUTANDO verificación completa para {service_name}")
     result = service.check_service()
     
     # Crear clave para el tiempo (redondeado a 5 minutos)
@@ -48,20 +72,27 @@ def run_service_check(service_name, service):
         error_message=result.get('error', '')
     )
     
-    print(f"[{now.strftime('%Y-%m-%d %H:%M:%S')}] {service_name}: {result['status']}")
+    # Mensaje más descriptivo según el resultado
+    if result['status'] == 'success':
+        status_msg = "✅ COMPLETE (Login + Request OK)"
+    else:
+        error_preview = result.get('error', 'Unknown error')[:50] + '...' if len(result.get('error', '')) > 50 else result.get('error', 'Unknown error')
+        status_msg = f"❌ FAILED: {error_preview}"
+    
+    print(f"[{now.strftime('%H:%M:%S')}] {service_name.upper()}: {status_msg}")
 
-def run_all_checks():
-    """Ejecuta verificaciones para todos los servicios"""
-    for service_name, service in services.items():
-        try:
-            run_service_check(service_name, service)
-        except Exception as e:
-            print(f"Error checking {service_name}: {str(e)}")
+def run_individual_service_check(service_name):
+    """Ejecuta verificación para un servicio específico"""
+    try:
+        service = services[service_name]
+        run_service_check(service_name, service)
+    except Exception as e:
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] {service_name.upper()}: ❌ EXCEPTION - {str(e)}")
 
 def cleanup_old_data():
     """Limpia datos antiguos de la base de datos"""
     try:
-        deleted_count = db.cleanup_old_data(hours_to_keep=48)
+        deleted_count = db.cleanup_old_data(hours_to_keep=24)
         if deleted_count > 0:
             print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Limpieza: eliminados {deleted_count} registros antiguos")
     except Exception as e:
@@ -69,12 +100,30 @@ def cleanup_old_data():
 
 def start_scheduler():
     """Inicia el scheduler en un hilo separado"""
-    schedule.every(5).minutes.do(run_all_checks)
-    schedule.every(1).hours.do(cleanup_old_data)
+    print("\n🚀 INICIANDO MONITOR DE SERVICIOS")
+    print("=" * 50)
     
-    # Ejecutar verificaciones y limpieza inicial
-    run_all_checks()
+    # Programar cada servicio con su intervalo específico
+    print("📅 Programando servicios:")
+    for service_name, interval_minutes in service_intervals.items():
+        schedule.every(interval_minutes).minutes.do(run_individual_service_check, service_name)
+        formatted_name = service_name.replace('_', ' ').title()
+        print(f"   • {formatted_name}: cada {interval_minutes} min.")
+    
+    # Programar limpieza de datos
+    schedule.every(1).hours.do(cleanup_old_data)
+    print(f"   • Limpieza BD: cada 1 hora")
+    
+    # Ejecutar verificaciones iniciales para todos los servicios
+    print(f"\n🔍 VERIFICACIÓN INICIAL ({len(services)} servicios):")
+    print("-" * 30)
+    for service_name in services.keys():
+        run_individual_service_check(service_name)
     cleanup_old_data()
+    
+    print("\n✅ Sistema iniciado correctamente")
+    print("📊 Monitoreo automático activo...")
+    print("=" * 50)
     
     while True:
         schedule.run_pending()
@@ -83,7 +132,17 @@ def start_scheduler():
 @app.route('/')
 def index():
     """Página principal"""
-    return render_template('index.html', services=sorted(services.keys()))
+    # Crear lista de servicios con sus intervalos para el template
+    services_with_intervals = []
+    for service_name in sorted(services.keys()):
+        services_with_intervals.append({
+            'name': service_name,
+            'interval': service_intervals[service_name]
+        })
+    
+    return render_template('index.html', 
+                         services=sorted(services.keys()),
+                         services_with_intervals=services_with_intervals)
 
 @app.route('/api/data/<service_name>')
 def get_service_data(service_name):

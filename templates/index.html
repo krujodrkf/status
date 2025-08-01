@@ -11,13 +11,16 @@
         <h1>Monitor de Servicios</h1>
         
         <div class="services-container">
-            {% for service in services %}
-            <div class="service-panel" data-service="{{ service }}">
+            {% for service_info in services_with_intervals %}
+            <div class="service-panel" data-service="{{ service_info.name }}">
                 <div class="service-header">
-                    <h2 class="service-name">{{ service | format_service_name }}</h2>
+                    <h2 class="service-name">
+                        {{ service_info.name | format_service_name }}
+                        <span class="service-interval">(cada {{ service_info.interval }} min.)</span>
+                    </h2>
                     <div class="service-status">
-                        <span class="status-indicator" id="status-{{ service }}">●</span>
-                        <span class="last-update" id="lastupdate-{{ service }}">Cargando...</span>
+                        <span class="status-indicator" id="status-{{ service_info.name }}">●</span>
+                        <span class="last-update" id="lastupdate-{{ service_info.name }}">Cargando...</span>
                     </div>
                 </div>
                 
@@ -29,7 +32,7 @@
                         <span>18:00</span>
                         <span>23:59</span>
                     </div>
-                    <div class="time-bar" id="timebar-{{ service }}">
+                    <div class="time-bar" id="timebar-{{ service_info.name }}">
                         <!-- Los segmentos se generarán con JavaScript -->
                     </div>
 
