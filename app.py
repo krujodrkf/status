@@ -61,20 +61,30 @@ def run_service_check(service_name, service):
     time_key = time_key.replace(minute=(time_key.minute // 5) * 5)
     time_str = time_key.strftime('%H:%M')
     
-    # Guardar en base de datos
-    db.insert_monitoring_data(
-        service_name=service_name,
-        timestamp=now,
-        time_slot=time_str,
-        status=result['status'],
-        request_data=result.get('request', ''),
-        response_data=result.get('response', ''),
-        error_message=result.get('error', '')
-    )
+    # Calcular cuántas barras debe pintar según el intervalo del servicio
+    service_interval = service_intervals.get(service_name, 5)
+    bars_to_paint = service_interval // 5  # Cada barra representa 5 minutos
+    
+    # Guardar en base de datos múltiples registros para barras consecutivas
+    for i in range(bars_to_paint):
+        # Calcular time_slot para cada barra
+        current_time_key = time_key + timedelta(minutes=i * 5)
+        current_time_str = current_time_key.strftime('%H:%M')
+        
+        db.insert_monitoring_data(
+            service_name=service_name,
+            timestamp=now,
+            time_slot=current_time_str,
+            status=result['status'],
+            request_data=result.get('request', ''),
+            response_data=result.get('response', ''),
+            error_message=result.get('error', '')
+        )
     
     # Mensaje más descriptivo según el resultado
     if result['status'] == 'success':
-        status_msg = "✅ COMPLETE (Login + Request OK)"
+        bars_info = f"({bars_to_paint} barras)" if bars_to_paint > 1 else ""
+        status_msg = f"✅ COMPLETE (Login + Request OK) {bars_info}"
     else:
         error_preview = result.get('error', 'Unknown error')[:50] + '...' if len(result.get('error', '')) > 50 else result.get('error', 'Unknown error')
         status_msg = f"❌ FAILED: {error_preview}"
